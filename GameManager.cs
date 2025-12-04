@@ -114,16 +114,19 @@ public class GameManager : MonoBehaviour
 
     private void CleanupMenuUI()
     {
-        // If this GameManager lived on the Menu Canvas, its children would
-        // persist because of DontDestroyOnLoad. Destroy any Canvas objects
-        // that came along so the menu is not visible in gameplay scenes.
-        foreach (var canvas in GetComponentsInChildren<Canvas>(true))
+        // Destroy any UI that is still riding along in the DontDestroyOnLoad
+        // scene (e.g., the Menu canvas the GameManager lived on). This ensures
+        // the menu is not visible behind gameplay scenes even if the canvas is
+        // not a child of this GameManager.
+        foreach (var canvas in Resources.FindObjectsOfTypeAll<Canvas>())
         {
-            // Skip canvases that belong to the newly loaded scene
-            if (canvas.gameObject.scene == SceneManager.GetActiveScene())
+            if (canvas == null)
                 continue;
 
-            Destroy(canvas.gameObject);
+            // Only remove canvases that persist in the DontDestroyOnLoad scene
+            // and are not part of the newly loaded gameplay scene.
+            if (canvas.gameObject.scene.name == "DontDestroyOnLoad")
+                Destroy(canvas.gameObject);
         }
     }
 
