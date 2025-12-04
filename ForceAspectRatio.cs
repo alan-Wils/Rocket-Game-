@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ForceAspectRatio : MonoBehaviour
 {
@@ -12,9 +13,46 @@ public class ForceAspectRatio : MonoBehaviour
 
     private const string BackgroundCameraName = "LetterboxBackgroundCamera";
 
+    private static ForceAspectRatio instance;
+
     void Start()
     {
         letterboxColor = Color.black;
+        ApplyAspect();
+        EnsureLetterboxBlackBars();
+    }
+
+    void Awake()
+    {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+        DontDestroyOnLoad(gameObject);
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            instance = null;
+        }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Re-apply after scene load so every scene gets the forced aspect ratio
+        StartCoroutine(ApplyOnNextFrame());
+    }
+
+    private System.Collections.IEnumerator ApplyOnNextFrame()
+    {
+        yield return null;
         ApplyAspect();
         EnsureLetterboxBlackBars();
     }
