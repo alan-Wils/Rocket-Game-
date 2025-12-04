@@ -135,7 +135,35 @@ public class GameManager : MonoBehaviour
                 if (b.name == "PlayAgain") playAgainButton = b;
                 if (b.name == "GoToMenu") goToMenuButton = b;
             }
+
+            ResetAndStartGameplay();
         }
+    }
+
+    /// <summary>
+    /// When a gameplay scene loads (either from the menu or via Play Again),
+    /// reset all runtime state and UI text before kicking off the round loop
+    /// so countdowns and round titles restart properly.
+    /// </summary>
+    private void ResetAndStartGameplay()
+    {
+        StopAllCoroutines();
+
+        timingRound = false;
+        gameActive = false;
+        currentRound = -1;
+
+        if (roundTimerText != null)
+            roundTimerText.text = Mathf.Ceil(roundDuration).ToString();
+
+        if (roundStartCountdownText != null)
+            roundStartCountdownText.text = "";
+
+        if (roundTitleText != null && rounds != null && rounds.Length > 0)
+            roundTitleText.text = rounds[0].roundName;
+
+        HideDeathUI();
+        StartGame();
     }
 
     private void CleanupMenuUI()
