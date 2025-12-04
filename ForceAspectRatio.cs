@@ -15,6 +15,24 @@ public class ForceAspectRatio : MonoBehaviour
 
     private static ForceAspectRatio instance;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void EnsureSingletonExists()
+    {
+        if (instance != null)
+            return;
+
+        ForceAspectRatio existing = FindFirstObjectByType<ForceAspectRatio>();
+        if (existing != null)
+        {
+            instance = existing;
+            DontDestroyOnLoad(existing.gameObject);
+            return;
+        }
+
+        GameObject go = new GameObject(nameof(ForceAspectRatio));
+        instance = go.AddComponent<ForceAspectRatio>();
+    }
+
     void Start()
     {
         letterboxColor = Color.black;
