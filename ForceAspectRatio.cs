@@ -7,6 +7,10 @@ public class ForceAspectRatio : MonoBehaviour
     public float targetWidth = 20f;
     public float targetHeight = 25f;
 
+    [Header("Diagnostics")]
+    [Tooltip("If true, logs when the aspect enforcer installs so you know the script is active in the build.")]
+    public bool logWhenInstalled = true;
+
     [Header("Letterbox")]
     public Color letterboxColor = Color.black;
     public bool createBackgroundCamera = true;
@@ -51,6 +55,11 @@ public class ForceAspectRatio : MonoBehaviour
         instance = this;
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
+
+        if (logWhenInstalled)
+        {
+            Debug.Log("ForceAspectRatio installed and will persist across scenes. Make sure this script lives inside your Assets folder so it compiles into the build.");
+        }
     }
 
     private void OnDestroy()
