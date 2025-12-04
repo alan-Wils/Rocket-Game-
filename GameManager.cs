@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -9,6 +8,20 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
+
+    [System.Serializable]
+    public class RoundData
+    {
+        public string roundName = "Round";
+        public float asteroidSpawnMultiplier = 1f;
+        public float enemySpeedMultiplier = 1f;
+        public float lootDropMultiplier = 1f;
+        public int asteroidCount = 20;
+        public int maxAsteroidsAlive = 10;
+        public float minSpawnDelay = 0.2f;
+        public float maxSpawnDelay = 1.2f;
+        public int enemyCount = 0;
+    }
 
     [Header("Rounds")]
     public RoundData[] rounds;
@@ -39,140 +52,31 @@ public class GameManager : MonoBehaviour
     private bool timingRound = false;
     private float currentRoundTime;
 
-    [System.Serializable]
-    public class RoundData
-    {
-        public string roundName = "Round";
-        public float asteroidSpawnMultiplier = 1f;
-        public float enemySpeedMultiplier = 1f;
-        public float lootDropMultiplier = 1f;
-        public int asteroidCount = 20;
-        public int maxAsteroidsAlive = 10;
-        public float minSpawnDelay = 0.2f;
-        public float maxSpawnDelay = 1.2f;
-        public int enemyCount = 0;
-    }
-
     private void Awake()
     {
-        // Persistent global manager
-        if (Instance == null)
-        {
-            DetachChildrenBeforePersisting();
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-
-            // Prevent Menu UI from persisting
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
-
-    /// <summary>
-    /// Prevent menu visuals from hitching a ride when this manager is persisted.
-    /// If the GameManager lives on a UI root in the Menu scene, detach all
-    /// children before calling DontDestroyOnLoad so the menu canvas/background
-    /// remains in the menu scene and unloads normally.
-    /// </summary>
-    private void DetachChildrenBeforePersisting()
-    {
-        if (transform.childCount == 0)
-            return;
-
-        // Copy to list to avoid modifying while iterating children directly.
-        var children = new List<Transform>(transform.childCount);
-        foreach (Transform child in transform)
-        {
-            children.Add(child);
-        }
-
-        foreach (Transform child in children)
-        {
-            child.SetParent(null, true);
-        }
-    }
-
-    // Called every time ANY scene loads
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        if (scene.name == "Menu")
-        {
-            // Menu scene: do not use gameplay UI
-            asteroidSpawner = null;
-            roundTimerText = null;
-            roundStartCountdownText = null;
-            roundTitleText = null;
-            deathMessage = null;
-            playAgainButton = null;
-            goToMenuButton = null;
-
-            gameActive = false;
-            timingRound = false;
-        }
-        else
-        {
-            // Remove any menu UI that might have persisted with this manager
-            CleanupMenuUI();
-
-            // Reconnect UI and spawners in gameplay scene
-            asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
-            TMP_Text[] texts = FindObjectsOfType<TMP_Text>();
-            Button[] buttons = FindObjectsOfType<Button>();
-
-            foreach (var t in texts)
-            {
-                if (t.name == "RoundTimer") roundTimerText = t;
-                if (t.name == "RoundCountdown") roundStartCountdownText = t;
-                if (t.name == "RoundTitle") roundTitleText = t;
-                if (t.name == "DeathMessage") deathMessage = t;
-            }
-
-            foreach (var b in buttons)
-            {
-                if (b.name == "PlayAgain") playAgainButton = b;
-                if (b.name == "GoToMenu") goToMenuButton = b;
-            }
-        }
-    }
-
-    private void CleanupMenuUI()
-    {
-        // Destroy any UI that is still riding along in the DontDestroyOnLoad
-        // scene (e.g., the Menu canvas the GameManager lived on). This ensures
-        // the menu is not visible behind gameplay scenes even if the canvas is
-        // not a child of this GameManager.
-        foreach (var canvas in Resources.FindObjectsOfTypeAll<Canvas>())
-        {
-            if (canvas == null)
-                continue;
-
-            // Only remove canvases that persist in the DontDestroyOnLoad scene
-            // and are not part of the newly loaded gameplay scene.
-            if (canvas.gameObject.scene.name == "DontDestroyOnLoad")
-                Destroy(canvas.gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     private void Start()
     {
-        if (SceneManager.GetActiveScene().name == "Menu") return;
-
         HideDeathUI();
         StartGame();
     }
 
+    // ---------------------------------------------------------
+    // START GAME
+    // ---------------------------------------------------------
     public void StartGame()
     {
-        if (SceneManager.GetActiveScene().name == "Menu") return;
-
         gameActive = true;
         currentRound = -1;
         StartCoroutine(RoundLoop());
     }
 
+    // ---------------------------------------------------------
+    // MAIN LOOP
+    // ---------------------------------------------------------
     private IEnumerator RoundLoop()
     {
         while (gameActive)
@@ -184,6 +88,9 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // ---------------------------------------------------------
+    // START ROUND
+    // ---------------------------------------------------------
     private IEnumerator StartNewRound()
     {
         currentRound++;
@@ -220,6 +127,9 @@ public class GameManager : MonoBehaviour
         StartCoroutine(RoundTimer());
     }
 
+    // ---------------------------------------------------------
+    // COUNTDOWN
+    // ---------------------------------------------------------
     private IEnumerator RoundStartCountdown()
     {
         int count = 3;
@@ -236,6 +146,9 @@ public class GameManager : MonoBehaviour
             roundStartCountdownText.text = "";
     }
 
+    // ---------------------------------------------------------
+    // TIMER
+    // ---------------------------------------------------------
     private IEnumerator RoundTimer()
     {
         currentRoundTime = roundDuration;
@@ -254,6 +167,9 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // ---------------------------------------------------------
+    // END ROUND
+    // ---------------------------------------------------------
     private void EndCurrentRound()
     {
         timingRound = false;
@@ -262,6 +178,9 @@ public class GameManager : MonoBehaviour
             asteroidSpawner.StopSpawning();
     }
 
+    // ---------------------------------------------------------
+    // GAME OVER CALLED BY PLAYERHEALTH
+    // ---------------------------------------------------------
     public void GameOver()
     {
         gameActive = false;
@@ -274,6 +193,9 @@ public class GameManager : MonoBehaviour
         ShowDeathUI();
     }
 
+    // ---------------------------------------------------------
+    // UI FUNCTIONS
+    // ---------------------------------------------------------
     private void ShowDeathUI()
     {
         if (deathMessage != null)
@@ -288,6 +210,9 @@ public class GameManager : MonoBehaviour
         if (goToMenuButton != null)
             goToMenuButton.gameObject.SetActive(true);
 
+        // -------------------------------------------------
+        // MAKE CURSOR VISIBLE WHEN GAME OVER SCREEN OPENS
+        // -------------------------------------------------
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }
@@ -303,10 +228,14 @@ public class GameManager : MonoBehaviour
         if (goToMenuButton != null)
             goToMenuButton.gameObject.SetActive(false);
 
+        // Optional: hide cursor when gameplay starts
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
 
+    // ---------------------------------------------------------
+    // BUTTON CALLBACKS
+    // ---------------------------------------------------------
     public void PlayAgain()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
