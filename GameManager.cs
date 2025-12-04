@@ -118,26 +118,55 @@ public class GameManager : MonoBehaviour
             CleanupMenuUI();
 
             // Reconnect UI and spawners in gameplay scene
-            asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
-            TMP_Text[] texts = FindObjectsOfType<TMP_Text>();
-            Button[] buttons = FindObjectsOfType<Button>();
-
-            foreach (var t in texts)
-            {
-                if (t.name == "RoundTimer") roundTimerText = t;
-                if (t.name == "RoundCountdown") roundStartCountdownText = t;
-                if (t.name == "RoundTitle") roundTitleText = t;
-                if (t.name == "DeathMessage") deathMessage = t;
-            }
-
-            foreach (var b in buttons)
-            {
-                if (b.name == "PlayAgain") playAgainButton = b;
-                if (b.name == "GoToMenu") goToMenuButton = b;
-            }
+            BindGameplayReferences(scene);
 
             ResetAndStartGameplay();
         }
+    }
+
+    /// <summary>
+    /// Find and wire up gameplay references entirely in code so restarting from
+    /// the menu always rebinds UI and spawners (even if nothing is assigned in
+    /// the inspector or objects start inactive).
+    /// </summary>
+    private void BindGameplayReferences(Scene scene)
+    {
+        asteroidSpawner = FindInScene<AsteroidSpawner>(scene);
+
+        roundTimerText = FindInSceneByName<TMP_Text>(scene, "RoundTimer");
+        roundStartCountdownText = FindInSceneByName<TMP_Text>(scene, "RoundCountdown");
+        roundTitleText = FindInSceneByName<TMP_Text>(scene, "RoundTitle");
+        deathMessage = FindInSceneByName<TMP_Text>(scene, "DeathMessage");
+
+        playAgainButton = FindInSceneByName<Button>(scene, "PlayAgain");
+        goToMenuButton = FindInSceneByName<Button>(scene, "GoToMenu");
+    }
+
+    private T FindInScene<T>(Scene scene) where T : Component
+    {
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            T result = root.GetComponentInChildren<T>(true);
+            if (result != null)
+                return result;
+        }
+
+        return null;
+    }
+
+    private T FindInSceneByName<T>(Scene scene, string targetName) where T : Component
+    {
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            T[] comps = root.GetComponentsInChildren<T>(true);
+            foreach (var comp in comps)
+            {
+                if (comp.name == targetName)
+                    return comp;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -188,6 +217,7 @@ public class GameManager : MonoBehaviour
     {
         if (SceneManager.GetActiveScene().name == "Menu") return;
 
+        BindGameplayReferences(SceneManager.GetActiveScene());
         HideDeathUI();
         StartGame();
     }
