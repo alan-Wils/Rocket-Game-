@@ -135,6 +135,8 @@ public class GameManager : MonoBehaviour
                 if (b.name == "PlayAgain") playAgainButton = b;
                 if (b.name == "GoToMenu") goToMenuButton = b;
             }
+
+            RestartGameAfterSceneLoad();
         }
     }
 
@@ -160,6 +162,18 @@ public class GameManager : MonoBehaviour
     {
         if (SceneManager.GetActiveScene().name == "Menu") return;
 
+        HideDeathUI();
+        StartGame();
+    }
+
+    /// <summary>
+    /// When a gameplay scene is (re)loaded via Play Again, restart all runtime
+    /// state and begin the round loop again. This is invoked from OnSceneLoaded
+    /// because the GameManager is not recreated when scenes change.
+    /// </summary>
+    private void RestartGameAfterSceneLoad()
+    {
+        StopAllCoroutines();
         HideDeathUI();
         StartGame();
     }
