@@ -118,25 +118,46 @@ public class GameManager : MonoBehaviour
             CleanupMenuUI();
 
             // Reconnect UI and spawners in gameplay scene
+            ReconnectGameplayUI(scene);
             asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
-            TMP_Text[] texts = FindObjectsOfType<TMP_Text>();
-            Button[] buttons = FindObjectsOfType<Button>();
-
-            foreach (var t in texts)
-            {
-                if (t.name == "RoundTimer") roundTimerText = t;
-                if (t.name == "RoundCountdown") roundStartCountdownText = t;
-                if (t.name == "RoundTitle") roundTitleText = t;
-                if (t.name == "DeathMessage") deathMessage = t;
-            }
-
-            foreach (var b in buttons)
-            {
-                if (b.name == "PlayAgain") playAgainButton = b;
-                if (b.name == "GoToMenu") goToMenuButton = b;
-            }
 
             RestartGameAfterSceneLoad();
+        }
+    }
+
+    /// <summary>
+    /// Reacquire gameplay UI references even if the scene authoring keeps them
+    /// disabled by default. Using Resources.FindObjectsOfTypeAll allows us to
+    /// locate inactive UI so we can show/hide it during restarts.
+    /// </summary>
+    /// <param name="scene">The newly loaded gameplay scene.</param>
+    private void ReconnectGameplayUI(Scene scene)
+    {
+        roundTimerText = null;
+        roundStartCountdownText = null;
+        roundTitleText = null;
+        deathMessage = null;
+        playAgainButton = null;
+        goToMenuButton = null;
+
+        foreach (var t in Resources.FindObjectsOfTypeAll<TMP_Text>())
+        {
+            if (t.gameObject.scene != scene)
+                continue;
+
+            if (t.name == "RoundTimer") roundTimerText = t;
+            if (t.name == "RoundCountdown") roundStartCountdownText = t;
+            if (t.name == "RoundTitle") roundTitleText = t;
+            if (t.name == "DeathMessage") deathMessage = t;
+        }
+
+        foreach (var b in Resources.FindObjectsOfTypeAll<Button>())
+        {
+            if (b.gameObject.scene != scene)
+                continue;
+
+            if (b.name == "PlayAgain") playAgainButton = b;
+            if (b.name == "GoToMenu") goToMenuButton = b;
         }
     }
 
