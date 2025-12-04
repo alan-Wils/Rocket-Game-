@@ -121,18 +121,18 @@ public class GameManager : MonoBehaviour
             // are guaranteed to exist before we grab references and start
             // coroutines. Without this, Play Again reloads can grab null UI
             // objects and leave timers/round labels unset.
-            StartCoroutine(ReconnectUIAndRestartNextFrame(scene));
+            StartCoroutine(ReconnectUIAndRestartNextFrame());
         }
     }
 
-    private IEnumerator ReconnectUIAndRestartNextFrame(Scene scene)
+    private IEnumerator ReconnectUIAndRestartNextFrame()
     {
         // Wait a frame to ensure all scene objects (including inactive UI) are
         // fully instantiated before we search for them.
         yield return null;
 
         // Reconnect UI and spawners in gameplay scene
-        ReconnectGameplayUI(scene);
+        ReconnectGameplayUI();
         asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
 
         RestartGameAfterSceneLoad();
@@ -143,8 +143,7 @@ public class GameManager : MonoBehaviour
     /// disabled by default. Using Resources.FindObjectsOfTypeAll allows us to
     /// locate inactive UI so we can show/hide it during restarts.
     /// </summary>
-    /// <param name="scene">The newly loaded gameplay scene.</param>
-    private void ReconnectGameplayUI(Scene scene)
+    private void ReconnectGameplayUI()
     {
         roundTimerText = null;
         roundStartCountdownText = null;
@@ -155,9 +154,6 @@ public class GameManager : MonoBehaviour
 
         foreach (var t in Resources.FindObjectsOfTypeAll<TMP_Text>())
         {
-            if (t.gameObject.scene != scene)
-                continue;
-
             if (t.name == "RoundTimer") roundTimerText = t;
             if (t.name == "RoundCountdown") roundStartCountdownText = t;
             if (t.name == "RoundTitle") roundTitleText = t;
@@ -166,9 +162,6 @@ public class GameManager : MonoBehaviour
 
         foreach (var b in Resources.FindObjectsOfTypeAll<Button>())
         {
-            if (b.gameObject.scene != scene)
-                continue;
-
             if (b.name == "PlayAgain") playAgainButton = b;
             if (b.name == "GoToMenu") goToMenuButton = b;
         }
@@ -352,7 +345,7 @@ public class GameManager : MonoBehaviour
             goToMenuButton.gameObject.SetActive(false);
 
         Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.Confined;
     }
 
     public void PlayAgain()
