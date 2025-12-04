@@ -117,53 +117,24 @@ public class GameManager : MonoBehaviour
             // Remove any menu UI that might have persisted with this manager
             CleanupMenuUI();
 
-            // Delay UI reconnect + restart by a frame so freshly loaded canvases
-            // are guaranteed to exist before we grab references and start
-            // coroutines. Without this, Play Again reloads can grab null UI
-            // objects and leave timers/round labels unset.
-            StartCoroutine(ReconnectUIAndRestartNextFrame());
-        }
-    }
+            // Reconnect UI and spawners in gameplay scene
+            asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
+            TMP_Text[] texts = FindObjectsOfType<TMP_Text>();
+            Button[] buttons = FindObjectsOfType<Button>();
 
-    private IEnumerator ReconnectUIAndRestartNextFrame()
-    {
-        // Wait a frame to ensure all scene objects (including inactive UI) are
-        // fully instantiated before we search for them.
-        yield return null;
+            foreach (var t in texts)
+            {
+                if (t.name == "RoundTimer") roundTimerText = t;
+                if (t.name == "RoundCountdown") roundStartCountdownText = t;
+                if (t.name == "RoundTitle") roundTitleText = t;
+                if (t.name == "DeathMessage") deathMessage = t;
+            }
 
-        // Reconnect UI and spawners in gameplay scene
-        ReconnectGameplayUI();
-        asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
-
-        RestartGameAfterSceneLoad();
-    }
-
-    /// <summary>
-    /// Reacquire gameplay UI references even if the scene authoring keeps them
-    /// disabled by default. Using Resources.FindObjectsOfTypeAll allows us to
-    /// locate inactive UI so we can show/hide it during restarts.
-    /// </summary>
-    private void ReconnectGameplayUI()
-    {
-        roundTimerText = null;
-        roundStartCountdownText = null;
-        roundTitleText = null;
-        deathMessage = null;
-        playAgainButton = null;
-        goToMenuButton = null;
-
-        foreach (var t in Resources.FindObjectsOfTypeAll<TMP_Text>())
-        {
-            if (t.name == "RoundTimer") roundTimerText = t;
-            if (t.name == "RoundCountdown") roundStartCountdownText = t;
-            if (t.name == "RoundTitle") roundTitleText = t;
-            if (t.name == "DeathMessage") deathMessage = t;
-        }
-
-        foreach (var b in Resources.FindObjectsOfTypeAll<Button>())
-        {
-            if (b.name == "PlayAgain") playAgainButton = b;
-            if (b.name == "GoToMenu") goToMenuButton = b;
+            foreach (var b in buttons)
+            {
+                if (b.name == "PlayAgain") playAgainButton = b;
+                if (b.name == "GoToMenu") goToMenuButton = b;
+            }
         }
     }
 
@@ -189,18 +160,6 @@ public class GameManager : MonoBehaviour
     {
         if (SceneManager.GetActiveScene().name == "Menu") return;
 
-        HideDeathUI();
-        StartGame();
-    }
-
-    /// <summary>
-    /// When a gameplay scene is (re)loaded via Play Again, restart all runtime
-    /// state and begin the round loop again. This is invoked from OnSceneLoaded
-    /// because the GameManager is not recreated when scenes change.
-    /// </summary>
-    private void RestartGameAfterSceneLoad()
-    {
-        StopAllCoroutines();
         HideDeathUI();
         StartGame();
     }
@@ -345,7 +304,7 @@ public class GameManager : MonoBehaviour
             goToMenuButton.gameObject.SetActive(false);
 
         Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     public void PlayAgain()
