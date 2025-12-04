@@ -14,6 +14,7 @@ public class ForceAspectRatio : MonoBehaviour
 
     void Start()
     {
+        letterboxColor = Color.black;
         ApplyAspect();
         EnsureLetterboxBlackBars();
     }
@@ -65,7 +66,7 @@ public class ForceAspectRatio : MonoBehaviour
         if (cam == null)
             return;
 
-        cam.backgroundColor = letterboxColor;
+        cam.backgroundColor = Color.black;
         cam.clearFlags = CameraClearFlags.SolidColor;
 
         if (!createBackgroundCamera)
@@ -73,19 +74,27 @@ public class ForceAspectRatio : MonoBehaviour
 
         Camera existing = GameObject.Find(BackgroundCameraName)?.GetComponent<Camera>();
         if (existing != null)
+        {
+            ConfigureBackgroundCamera(existing, cam);
             return;
+        }
 
         GameObject bgCamObj = new GameObject(BackgroundCameraName);
         Camera bgCam = bgCamObj.AddComponent<Camera>();
 
-        bgCam.depth = cam.depth - 1f;
+        ConfigureBackgroundCamera(bgCam, cam);
+    }
+
+    private void ConfigureBackgroundCamera(Camera bgCam, Camera referenceCam)
+    {
+        bgCam.depth = referenceCam.depth - 1f;
         bgCam.clearFlags = CameraClearFlags.SolidColor;
-        bgCam.backgroundColor = letterboxColor;
+        bgCam.backgroundColor = Color.black;
         bgCam.cullingMask = 0;
         bgCam.rect = new Rect(0f, 0f, 1f, 1f);
-        bgCam.orthographic = cam.orthographic;
-        bgCam.orthographicSize = cam.orthographicSize;
-        bgCam.nearClipPlane = cam.nearClipPlane;
-        bgCam.farClipPlane = cam.farClipPlane;
+        bgCam.orthographic = referenceCam.orthographic;
+        bgCam.orthographicSize = referenceCam.orthographicSize;
+        bgCam.nearClipPlane = referenceCam.nearClipPlane;
+        bgCam.farClipPlane = referenceCam.farClipPlane;
     }
 }
