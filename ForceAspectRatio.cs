@@ -6,9 +6,16 @@ public class ForceAspectRatio : MonoBehaviour
     public float targetWidth = 20f;
     public float targetHeight = 25f;
 
+    [Header("Letterbox")]
+    public Color letterboxColor = Color.black;
+    public bool createBackgroundCamera = true;
+
+    private const string BackgroundCameraName = "LetterboxBackgroundCamera";
+
     void Start()
     {
         ApplyAspect();
+        EnsureLetterboxBlackBars();
     }
 
     void ApplyAspect()
@@ -50,5 +57,35 @@ public class ForceAspectRatio : MonoBehaviour
 
             cam.rect = rect;
         }
+    }
+
+    private void EnsureLetterboxBlackBars()
+    {
+        Camera cam = Camera.main;
+        if (cam == null)
+            return;
+
+        cam.backgroundColor = letterboxColor;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+
+        if (!createBackgroundCamera)
+            return;
+
+        Camera existing = GameObject.Find(BackgroundCameraName)?.GetComponent<Camera>();
+        if (existing != null)
+            return;
+
+        GameObject bgCamObj = new GameObject(BackgroundCameraName);
+        Camera bgCam = bgCamObj.AddComponent<Camera>();
+
+        bgCam.depth = cam.depth - 1f;
+        bgCam.clearFlags = CameraClearFlags.SolidColor;
+        bgCam.backgroundColor = letterboxColor;
+        bgCam.cullingMask = 0;
+        bgCam.rect = new Rect(0f, 0f, 1f, 1f);
+        bgCam.orthographic = cam.orthographic;
+        bgCam.orthographicSize = cam.orthographicSize;
+        bgCam.nearClipPlane = cam.nearClipPlane;
+        bgCam.farClipPlane = cam.farClipPlane;
     }
 }
