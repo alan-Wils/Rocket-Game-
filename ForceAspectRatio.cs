@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -18,6 +19,24 @@ public class ForceAspectRatio : MonoBehaviour
     private const string BackgroundCameraName = "LetterboxBackgroundCamera";
 
     private static ForceAspectRatio instance;
+
+    // Prevent dragging menu/background children along when this singleton persists
+    private void DetachChildrenIfAny()
+    {
+        if (transform.childCount == 0)
+            return;
+
+        var children = new System.Collections.Generic.List<Transform>(transform.childCount);
+        foreach (Transform child in transform)
+        {
+            children.Add(child);
+        }
+
+        foreach (Transform child in children)
+        {
+            child.SetParent(null, true);
+        }
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void EnsureSingletonExists()
@@ -51,6 +70,9 @@ public class ForceAspectRatio : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
+        // Make sure no menu/background children hitch a ride into gameplay scenes
+        DetachChildrenIfAny();
 
         instance = this;
         DontDestroyOnLoad(gameObject);
@@ -131,7 +153,7 @@ public class ForceAspectRatio : MonoBehaviour
         if (cam == null)
             return;
 
-        cam.backgroundColor = Color.black;
+        cam.backgroundColor = letterboxColor;
         cam.clearFlags = CameraClearFlags.SolidColor;
 
         if (!createBackgroundCamera)
@@ -154,7 +176,7 @@ public class ForceAspectRatio : MonoBehaviour
     {
         bgCam.depth = referenceCam.depth - 1f;
         bgCam.clearFlags = CameraClearFlags.SolidColor;
-        bgCam.backgroundColor = Color.black;
+        bgCam.backgroundColor = letterboxColor;
         bgCam.cullingMask = 0;
         bgCam.rect = new Rect(0f, 0f, 1f, 1f);
         bgCam.orthographic = referenceCam.orthographic;
