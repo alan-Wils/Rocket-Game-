@@ -117,12 +117,25 @@ public class GameManager : MonoBehaviour
             // Remove any menu UI that might have persisted with this manager
             CleanupMenuUI();
 
-            // Reconnect UI and spawners in gameplay scene
-            ReconnectGameplayUI(scene);
-            asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
-
-            RestartGameAfterSceneLoad();
+            // Delay UI reconnect + restart by a frame so freshly loaded canvases
+            // are guaranteed to exist before we grab references and start
+            // coroutines. Without this, Play Again reloads can grab null UI
+            // objects and leave timers/round labels unset.
+            StartCoroutine(ReconnectUIAndRestartNextFrame(scene));
         }
+    }
+
+    private IEnumerator ReconnectUIAndRestartNextFrame(Scene scene)
+    {
+        // Wait a frame to ensure all scene objects (including inactive UI) are
+        // fully instantiated before we search for them.
+        yield return null;
+
+        // Reconnect UI and spawners in gameplay scene
+        ReconnectGameplayUI(scene);
+        asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
+
+        RestartGameAfterSceneLoad();
     }
 
     /// <summary>
