@@ -118,81 +118,24 @@ public class GameManager : MonoBehaviour
             CleanupMenuUI();
 
             // Reconnect UI and spawners in gameplay scene
-            BindGameplayReferences(scene);
+            asteroidSpawner = FindObjectOfType<AsteroidSpawner>();
+            TMP_Text[] texts = FindObjectsOfType<TMP_Text>();
+            Button[] buttons = FindObjectsOfType<Button>();
 
-            ResetAndStartGameplay();
-        }
-    }
-
-    /// <summary>
-    /// Find and wire up gameplay references entirely in code so restarting from
-    /// the menu always rebinds UI and spawners (even if nothing is assigned in
-    /// the inspector or objects start inactive).
-    /// </summary>
-    private void BindGameplayReferences(Scene scene)
-    {
-        asteroidSpawner = FindInScene<AsteroidSpawner>(scene);
-
-        roundTimerText = FindInSceneByName<TMP_Text>(scene, "RoundTimer");
-        roundStartCountdownText = FindInSceneByName<TMP_Text>(scene, "RoundCountdown");
-        roundTitleText = FindInSceneByName<TMP_Text>(scene, "RoundTitle");
-        deathMessage = FindInSceneByName<TMP_Text>(scene, "DeathMessage");
-
-        playAgainButton = FindInSceneByName<Button>(scene, "PlayAgain");
-        goToMenuButton = FindInSceneByName<Button>(scene, "GoToMenu");
-    }
-
-    private T FindInScene<T>(Scene scene) where T : Component
-    {
-        foreach (var root in scene.GetRootGameObjects())
-        {
-            T result = root.GetComponentInChildren<T>(true);
-            if (result != null)
-                return result;
-        }
-
-        return null;
-    }
-
-    private T FindInSceneByName<T>(Scene scene, string targetName) where T : Component
-    {
-        foreach (var root in scene.GetRootGameObjects())
-        {
-            T[] comps = root.GetComponentsInChildren<T>(true);
-            foreach (var comp in comps)
+            foreach (var t in texts)
             {
-                if (comp.name == targetName)
-                    return comp;
+                if (t.name == "RoundTimer") roundTimerText = t;
+                if (t.name == "RoundCountdown") roundStartCountdownText = t;
+                if (t.name == "RoundTitle") roundTitleText = t;
+                if (t.name == "DeathMessage") deathMessage = t;
+            }
+
+            foreach (var b in buttons)
+            {
+                if (b.name == "PlayAgain") playAgainButton = b;
+                if (b.name == "GoToMenu") goToMenuButton = b;
             }
         }
-
-        return null;
-    }
-
-    /// <summary>
-    /// When a gameplay scene loads (either from the menu or via Play Again),
-    /// reset all runtime state and UI text before kicking off the round loop
-    /// so countdowns and round titles restart properly.
-    /// </summary>
-    private void ResetAndStartGameplay()
-    {
-        StopAllCoroutines();
-
-        timingRound = false;
-        gameActive = false;
-        currentRound = -1;
-
-        if (roundTimerText != null)
-            roundTimerText.text = Mathf.Ceil(roundDuration).ToString();
-
-        if (roundStartCountdownText != null)
-            roundStartCountdownText.text = "";
-
-        if (roundTitleText != null && rounds != null && rounds.Length > 0)
-            roundTitleText.text = rounds[0].roundName;
-
-        HideDeathUI();
-        StartGame();
     }
 
     private void CleanupMenuUI()
@@ -217,7 +160,6 @@ public class GameManager : MonoBehaviour
     {
         if (SceneManager.GetActiveScene().name == "Menu") return;
 
-        BindGameplayReferences(SceneManager.GetActiveScene());
         HideDeathUI();
         StartGame();
     }
