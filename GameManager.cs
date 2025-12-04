@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -57,6 +58,7 @@ public class GameManager : MonoBehaviour
         // Persistent global manager
         if (Instance == null)
         {
+            DetachChildrenBeforePersisting();
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
@@ -66,6 +68,30 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Prevent menu visuals from hitching a ride when this manager is persisted.
+    /// If the GameManager lives on a UI root in the Menu scene, detach all
+    /// children before calling DontDestroyOnLoad so the menu canvas/background
+    /// remains in the menu scene and unloads normally.
+    /// </summary>
+    private void DetachChildrenBeforePersisting()
+    {
+        if (transform.childCount == 0)
+            return;
+
+        // Copy to list to avoid modifying while iterating children directly.
+        var children = new List<Transform>(transform.childCount);
+        foreach (Transform child in transform)
+        {
+            children.Add(child);
+        }
+
+        foreach (Transform child in children)
+        {
+            child.SetParent(null, true);
         }
     }
 
